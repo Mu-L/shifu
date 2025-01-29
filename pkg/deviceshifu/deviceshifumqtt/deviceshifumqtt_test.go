@@ -138,7 +138,7 @@ func TestCommandHandleMQTTFunc(t *testing.T) {
 		mockMQTTServer(stop)
 		wg.Done()
 	}()
-	
+
 	opts := mqtt.NewClientOptions()
 	opts.AddBroker(fmt.Sprintf("tcp://%s", *unitest.ToPointer(unitTestServerAddress)))
 	opts.SetClientID("shifu-service")
@@ -178,7 +178,12 @@ func TestCommandHandleMQTTFunc(t *testing.T) {
 	assert.Nil(t, r.Error()) // not blocked
 
 	// test put method
-	r = dc.Put().Do(context.TODO())
+	MutexProcess("test/test1", "device_finish_moving")
+	r = dc.Put().Body([]byte(requestBody)).Do(context.TODO())
+	assert.Nil(t, r.Error()) // not blocked
+
+	// test delete method
+	r = dc.Delete().Do(context.TODO())
 	assert.Equal(t, "the server rejected our request for an unknown reason", r.Error().Error())
 
 	// test Cannot Encode message to json

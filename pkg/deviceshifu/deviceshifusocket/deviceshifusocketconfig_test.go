@@ -20,7 +20,7 @@ const (
 	MockDeviceWritFilePermission = 0644
 	MockDeviceConfigPath         = "etc"
 	MockConfigFile               = "mockconfig"
-	UnitTestAddress              = "localhost:23266"
+	UnitTestAddress              = "localhost:23267"
 )
 
 var MockDeviceConfigFolder = path.Join("etc", "edgedevice", "config")
@@ -62,7 +62,7 @@ func TestNewDeviceShifuConfig(t *testing.T) {
 
 	mockdsc, err := deviceshifubase.NewDeviceShifuConfig(MockDeviceConfigFolder)
 	if err != nil {
-		t.Errorf(err.Error())
+		t.Errorf("Error: %v", err)
 	}
 
 	eq := reflect.DeepEqual(DriverProperties, mockdsc.DriverProperties)

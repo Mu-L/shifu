@@ -17,10 +17,10 @@
 
 <h1 style="border-bottom: none">
 <br>
-    Open Source Industrial Edge
+    Kubernetes native IoT Gateway
     <br />
 </h1>
-Shifu is a Kubernetes native, production-grade, protocol & vendor agnostic IoT development framework.
+Shifu is a Kubernetes native, production-grade, protocol & vendor agnostic IoT gateway.
 </div>
 </div>
 
@@ -34,14 +34,29 @@ Shifu is a Kubernetes native, production-grade, protocol & vendor agnostic IoT d
     <a href="https://github.com/Edgenesis/shifu"><img src="https://img.shields.io/github/stars/Edgenesis/shifu?style=social" height=25></a>
 </div>
 
+## Shifu's value: Let's develop APPs, not infra
+<div align="center">
+<img width="900px" src="./img/iot-stack-with-shifu.svg"></img>
+</div>
+
+## CNCF Livestream with Live Demo
+
+[![Cloud Native Live](https://img.youtube.com/vi/qMrdM1QcLMk/maxresdefault.jpg)](https://www.youtube.com/watch?v=qMrdM1QcLMk)
+
 ## Features
 **Kubernetes native** — developing your application while managing your devices, spare the need for maintaining an additional O&M infrastructure.
 
 **Open Platform** — No vendor lock-in. You can easily deploy Shifu on the edge(from RaspberryPi to edge clusters) or on the cloud(public, private and hybrid cloud are all supported).
 
 **Protocol agnostic** — HTTP, MQTT, RTSP, Siemens S7, TCP socket, OPC UA...The microservice architecture of Shifu enables it to quickly adapt to new protocols.
+
+## Terms 
+**shifu** - a Kubernetes CRD for integrating IoT devices into the cluster.
+
+**DeviceShifu** - a Kubernetes pod as well as the atomic unit of Shifu. DeviceShifu mainly contains the driver of the device and represents a device in the cluster. Or you can call it "digital twin" of the device.
+
 <div align="center">
-<img width="900px" src="./img/shifu-before-and-after.png"></img>
+<img width="900px" src="./img/shifu-architecture.png"></img>
 </div>
 
 ## How to connect a proprietary-protocol camera with five lines of code
@@ -67,6 +82,7 @@ Welcome to check 🗒️[Shifu Documentation](https://shifu.dev/) for detailed i
 - 🔧[Install](https://shifu.dev/docs/guides/install/install-shifu-dev)
 - 🔌[Connect devices](https://shifu.dev/docs/guides/cases/)
 - 👨‍💻[Application Development](https://shifu.dev/docs/guides/application/)
+- 🎮[Try Our KillerCoda Demo](https://killercoda.com/shifu/shifu-demo)
 
 ## Contributing
 

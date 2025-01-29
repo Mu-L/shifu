@@ -33,9 +33,11 @@ type TCPSetting struct {
 
 // MQTTSetting defines MQTT specific settings when connecting to an EdgeDevice
 type MQTTSetting struct {
-	MQTTTopic         *string `json:"MQTTTopic,omitempty"`
-	MQTTServerAddress *string `json:"MQTTServerAddress,omitempty"`
-	MQTTServerSecret  *string `json:"MQTTServerSecret,omitempty"`
+	MQTTTopic          *string `json:"MQTTTopic,omitempty"`
+	MQTTServerAddress  *string `json:"MQTTServerAddress,omitempty"`
+	MQTTServerSecret   *string `json:"MQTTServerSecret,omitempty"`
+	MQTTServerUserName string  `json:"MQTTServerUserName,omitempty"`
+	MQTTServerPassword string  `json:"MQTTServerPassword,omitempty"`
 }
 
 // OPCUASetting defines OPC UA specific settings when connecting to an OPC UA endpoint
@@ -80,6 +82,78 @@ type SocketSetting struct {
 	NetworkType  *string `json:"networkType,omitempty"`
 }
 
+type SecurityMode string
+
+const (
+	// SecurityModeNoSec No security
+	SecurityModeNone SecurityMode = "None"
+	// SecurityModePSK Pre-Shared Key
+	SecurityModeDTLS SecurityMode = "DTLS"
+)
+
+type DTLSMode string
+
+const (
+	// DTLSModePSK Pre-Shared Key
+	DTLSModePSK DTLSMode = "PSK"
+	// DTLSModeRPK Raw Public Key
+	DTLSModeRPK DTLSMode = "RPK"
+	// DTLSModeX509 X.509
+	DTLSModeX509 DTLSMode = "X.509"
+)
+
+type LwM2MSetting struct {
+	// +kubebuilder:validation:Required
+	EndpointName string `json:"endpointName,omitempty"`
+	// +kubebuilder:default="None"
+	SecurityMode *SecurityMode `json:"securityMode,omitempty"`
+	DTLSMode     *DTLSMode     `json:"dtlsMode,omitempty"`
+
+	CipherSuites []CipherSuite `json:"cipherSuites,omitempty"`
+	PSKIdentity  *string       `json:"pskIdentity,omitempty"`
+	PSKKey       *string       `json:"pskKey,omitempty"`
+
+	// +kubebuilder:default=-1
+	PingIntervalSec int64 `json:"pingIntervalSec,omitempty"`
+	// reference https://datatracker.ietf.org/doc/html/rfc7252#section-4.8.2
+	// +kubebuilder:default=247
+	LifeTimeSec int64 `json:"lifeTimeSec,omitempty"`
+	// +kubebuilder:default=60
+	UpdateIntervalSec int64 `json:"updateIntervalSec,omitempty"`
+	// +kubebuilder:default=30
+	ObserveIntervalSec int64 `json:"observeIntervalSec,omitempty"`
+}
+
+type CipherSuite string
+
+// Reference:
+// https://www.iana.org/assignments/tls-parameters/tls-parameters.xhtml#tls-parameters-4
+// https://github.com/pion/dtls/blob/98a05d681d3affae2d055a70d3273cbb35425b5a/cipher_suite.go#L25-L45
+const (
+	// AES-128-CCM
+	CipherSuite_TLS_ECDHE_ECDSA_WITH_AES_128_CCM   CipherSuite = "TLS_ECDHE_ECDSA_WITH_AES_128_CCM"
+	CipherSuite_TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8 CipherSuite = "TLS_ECDHE_ECDSA_WITH_AES_128_CCM_8"
+
+	// AES-128-GCM-SHA256
+	CipherSuite_TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256 CipherSuite = "TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256"
+	CipherSuite_TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256   CipherSuite = "TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256"
+
+	CipherSuite_TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384 CipherSuite = "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384"
+	CipherSuite_TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384   CipherSuite = "TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384"
+
+	// AES-256-CBC-SHA
+	CipherSuite_TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA CipherSuite = "TLS_ECDHE_ECDSA_WITH_AES_256_CBC_SHA"
+	CipherSuite_TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA   CipherSuite = "TLS_ECDHE_RSA_WITH_AES_256_CBC_SHA"
+
+	CipherSuite_TLS_PSK_WITH_AES_128_CCM        CipherSuite = "TLS_PSK_WITH_AES_128_CCM"
+	CipherSuite_TLS_PSK_WITH_AES_128_CCM_8      CipherSuite = "TLS_PSK_WITH_AES_128_CCM_8"
+	CipherSuite_TLS_PSK_WITH_AES_256_CCM_8      CipherSuite = "TLS_PSK_WITH_AES_256_CCM_8"
+	CipherSuite_TLS_PSK_WITH_AES_128_GCM_SHA256 CipherSuite = "TLS_PSK_WITH_AES_128_GCM_SHA256"
+	CipherSuite_TLS_PSK_WITH_AES_128_CBC_SHA256 CipherSuite = "TLS_PSK_WITH_AES_128_CBC_SHA256"
+
+	CipherSuite_TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256 CipherSuite = "TLS_ECDHE_PSK_WITH_AES_128_CBC_SHA256"
+)
+
 // ProtocolSettings defines protocol settings when connecting to an EdgeDevice
 type ProtocolSettings struct {
 	MQTTSetting   *MQTTSetting   `json:"MQTTSetting,omitempty"`
@@ -87,6 +161,14 @@ type ProtocolSettings struct {
 	SocketSetting *SocketSetting `json:"SocketSetting,omitempty"`
 	PLC4XSetting  *PLC4XSetting  `json:"PLC4XSetting,omitempty"`
 	TCPSetting    *TCPSetting    `json:"TCPSetting,omitempty"`
+	LwM2MSetting  *LwM2MSetting  `json:"LwM2MSetting,omitempty"`
+}
+
+// GatewaySettings defines gateway settings when connecting to an EdgeDevice
+type GatewaySettings struct {
+	Protocol     *string       `json:"protocol,omitempty"`
+	Address      *string       `json:"address,omitempty"`
+	LwM2MSetting *LwM2MSetting `json:"LwM2MSetting,omitempty"`
 }
 
 // EdgeDeviceSpec defines the desired state of EdgeDevice
@@ -100,6 +182,7 @@ type EdgeDeviceSpec struct {
 	Address          *string            `json:"address,omitempty"`
 	Protocol         *Protocol          `json:"protocol,omitempty"`
 	ProtocolSettings *ProtocolSettings  `json:"protocolSettings,omitempty"`
+	GatewaySettings  *GatewaySettings   `json:"gatewaySettings,omitempty"`
 	CustomMetadata   *map[string]string `json:"customMetadata,omitempty"`
 
 	// TODO: add other fields like disconnectTimemoutInSeconds
@@ -136,12 +219,13 @@ type Protocol string
 const (
 	ProtocolHTTP            Protocol = "HTTP"
 	ProtocolHTTPCommandline Protocol = "HTTPCommandline"
+	ProtocolLwM2M           Protocol = "LwM2M"
 	ProtocolMQTT            Protocol = "MQTT"
 	ProtocolOPCUA           Protocol = "OPCUA"
-	ProtocolSocket          Protocol = "Socket"
 	ProtocolPLC4X           Protocol = "PLC4X"
-	ProtocolUSB             Protocol = "USB"
+	ProtocolSocket          Protocol = "Socket"
 	ProtocolTCP             Protocol = "TCP"
+	ProtocolUSB             Protocol = "USB"
 )
 
 type Encoding string

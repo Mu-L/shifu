@@ -32,12 +32,17 @@ func main() {
 }
 
 func sendToMQTT(w http.ResponseWriter, r *http.Request) {
+	username := r.URL.Query().Get("username")
+	password := r.URL.Query().Get("password")
+
 	defaultTopic := "/test"
 	req := &v1alpha1.TelemetryRequest{
 		RawData: []byte("testData"),
 		MQTTSetting: &v1alpha1.MQTTSetting{
-			MQTTTopic:         &defaultTopic,
-			MQTTServerAddress: &targetMqttServer,
+			MQTTTopic:          &defaultTopic,
+			MQTTServerAddress:  &targetMqttServer,
+			MQTTServerUserName: username,
+			MQTTServerPassword: password,
 		},
 	}
 	if err := sendRequest(req, "/mqtt"); err != nil {
@@ -89,7 +94,7 @@ func sendToSQLServer(w http.ResponseWriter, r *http.Request) {
 		SQLConnectionSetting: &v1alpha1.SQLConnectionSetting{
 			ServerAddress: &targetMSSQLServer,
 			UserName:      toPointer("sa"),
-			Secret:        toPointer("Some_Strong_Password"),
+			Secret:        toPointer("YourStrong@Passw0rd"),
 			DBName:        toPointer("shifu"),
 			DBTable:       toPointer("testTable"),
 			DBType:        toPointer(v1alpha1.DBTypeSQLServer),

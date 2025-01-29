@@ -68,9 +68,11 @@ First you need to add `MQTTSetting` to `ProtocolSettings`. Then you need to add 
 ```go
 // MQTTSetting defines MQTT specific settings when connecting to an EdgeDevice
 type MQTTSetting struct {
-    MQTTTopic         *string `json:"MQTTTopic,omitempty"`
-    MQTTServerAddress *string `json:"MQTTServerAddress,omitempty"`
-    MQTTServerSecret  *string `json:"MQTTServerSecret,omitempty"`
+    MQTTTopic           *string `json:"MQTTTopic,omitempty"`
+    MQTTServerAddress   *string `json:"MQTTServerAddress,omitempty"`
+    MQTTServerSecret    *string `json:"MQTTServerSecret,omitempty"``
+    MQTTServerPassword   string `json:"MQTTServerPassword,omitempty"`
+    MQTTServerUserName   string  `json:"MQTTServerUserName,omitempty"`
 }
 ```
 
@@ -223,7 +225,7 @@ The dockerfile, take `MQTT` as example, can be:
 
 ```dockerfile
 # Build the manager binary
-FROM --platform=$BUILDPLATFORM golang:1.20.4 as builder
+FROM --platform=$BUILDPLATFORM golang:1.22.0 as builder
 
 WORKDIR /shifu
 

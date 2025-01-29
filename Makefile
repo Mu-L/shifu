@@ -1,7 +1,10 @@
 PROJECT_ROOT := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 IMAGE_VERSION = $(shell cat version.txt)
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
-ENVTEST_K8S_VERSION = 1.25.2
+ENVTEST_K8S_VERSION = 1.31.0
+# Controller-Runtime branch `release-0.19` has the implementation of the setup-envtest's code responsible
+# for downloading the tarball from the correct location.
+ENVTEST_VERSION ?= release-0.19
 
 DEVICESHIFU_CMDS := deviceshifu/cmdhttp deviceshifu/cmdmqtt deviceshifu/cmdopcua deviceshifu/cmdplc4x deviceshifu/cmdsocket
 HTTPSTUB_CMDS := httpstub/powershellstub httpstub/sshstub
@@ -68,6 +71,17 @@ buildx-push-image-deviceshifu-tcp-tcp:
 		--build-arg PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT} \
 		-t edgehub/deviceshifu-tcp-tcp:${IMAGE_VERSION} --push
 
+buildx-push-image-deviceshifu-http-lwm2m:
+	docker buildx build --platform=linux/amd64,linux/arm64,linux/arm  -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.deviceshifuLwM2M \
+		--build-arg PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT} \
+		-t edgehub/deviceshifu-http-lwm2m:${IMAGE_VERSION} --push
+
+buildx-push-image-gateway-lwm2m:
+	docker buildx build --platform=linux/amd64,linux/arm64,linux/arm \
+		-f $(PROJECT_ROOT)/dockerfiles/Dockerfile.gatewayLwM2M \
+		--build-arg PROJECT_ROOT="$(PROJECT_ROOT)" $(PROJECT_ROOT) \
+		-t edgehub/gateway-lwm2m:$(IMAGE_VERSION) --push
+
 buildx-push-image-shifu-controller:
 	docker buildx build --platform=linux/amd64,linux/arm64,linux/arm -f $(PROJECT_ROOT)/pkg/k8s/crd/Dockerfile \
           --build-arg PROJECT_ROOT="$(PROJECT_ROOT)" $(PROJECT_ROOT) \
@@ -122,7 +136,9 @@ buildx-push-image-deviceshifu: \
 	buildx-push-image-deviceshifu-http-socket \
 	buildx-push-image-deviceshifu-http-opcua \
 	buildx-push-image-deviceshifu-http-plc4x \
-	buildx-push-image-deviceshifu-tcp-tcp
+	buildx-push-image-deviceshifu-tcp-tcp \
+	buildx-push-image-deviceshifu-http-lwm2m \
+	buildx-push-image-gateway-lwm2m
 
 buildx-push-image-telemetry-service:
 	docker buildx build --platform=linux/amd64,linux/arm64,linux/arm -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.telemetryservice \
@@ -138,6 +154,11 @@ buildx-build-image-deviceshifu-http-http:
 	docker buildx build --platform=linux/$(shell go env GOARCH) -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.deviceshifuHTTP \
 		--build-arg PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT} \
 		-t edgehub/deviceshifu-http-http:${IMAGE_VERSION} --load
+
+buildx-build-image-deviceshifu-http-lwm2m:
+	docker buildx build --platform=linux/$(shell go env GOARCH) -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.deviceshifuLwM2M \
+		--build-arg PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT} \
+		-t edgehub/deviceshifu-http-lwm2m:${IMAGE_VERSION} --load
 
 buildx-build-image-deviceshifu-http-mqtt:
 	docker buildx build --platform=linux/$(shell go env GOARCH) -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.deviceshifuMQTT \
@@ -160,7 +181,7 @@ buildx-build-image-deviceshifu-http-plc4x:
 		-t edgehub/deviceshifu-http-plc4x:${IMAGE_VERSION} --load
 
 buildx-build-image-deviceshifu-tcp-tcp:
-	docker buildx build --platform=linux/$(shell go env GOARCH) -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.deviceshifuTcp\
+	docker buildx build --platform=linux/$(shell go env GOARCH) -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.deviceshifuTCP\
 		--build-arg PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT} \
 		-t edgehub/deviceshifu-tcp-tcp:${IMAGE_VERSION} --load
 
@@ -212,12 +233,20 @@ buildx-build-image-deviceshifu: \
 	buildx-build-image-deviceshifu-http-socket \
 	buildx-build-image-deviceshifu-http-opcua \
 	buildx-build-image-deviceshifu-http-plc4x \
-	buildx-build-image-deviceshifu-tcp-tcp
+	buildx-build-image-deviceshifu-tcp-tcp \
+	buildx-build-image-deviceshifu-http-lwm2m \
+	buildx-build-image-gateway-lwm2m
 
 buildx-build-image-telemetry-service:
 	docker buildx build --platform=linux/$(shell go env GOARCH) -f ${PROJECT_ROOT}/dockerfiles/Dockerfile.telemetryservice\
 		--build-arg PROJECT_ROOT="${PROJECT_ROOT}" ${PROJECT_ROOT} \
 		-t edgehub/telemetryservice:${IMAGE_VERSION} --load
+
+buildx-build-image-gateway-lwm2m:
+	docker buildx build --platform=linux/$(shell go env GOARCH) \
+          -f $(PROJECT_ROOT)/dockerfiles/Dockerfile.gatewayLwM2M \
+          --build-arg PROJECT_ROOT="$(PROJECT_ROOT)" $(PROJECT_ROOT) \
+          -t edgehub/gateway-lwm2m:$(IMAGE_VERSION) --load
 
 .PHONY: download-demo-files
 download-demo-files:
@@ -263,8 +292,8 @@ CONTROLLER_GEN ?= $(LOCALBIN)/controller-gen
 ENVTEST ?= $(LOCALBIN)/setup-envtest
 
 ## Tool Versions
-KUSTOMIZE_VERSION ?= v4.5.5
-CONTROLLER_TOOLS_VERSION ?= v0.9.2
+KUSTOMIZE_VERSION ?= v5.4.3
+CONTROLLER_TOOLS_VERSION ?= v0.16.3
 
 KUSTOMIZE_INSTALL_SCRIPT ?= "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"
 .PHONY: kustomize
@@ -278,6 +307,6 @@ $(CONTROLLER_GEN): $(LOCALBIN)
 	test -s $(LOCALBIN)/controller-gen || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-tools/cmd/controller-gen@$(CONTROLLER_TOOLS_VERSION)
 
 .PHONY: envtest
-envtest: $(ENVTEST) ## Download envtest-setup locally if necessary.
+envtest: $(ENVTEST) ## Download setup-envtest locally if necessary.
 $(ENVTEST): $(LOCALBIN)
-	test -s $(LOCALBIN)/setup-envtest || GOBIN=$(LOCALBIN) go install sigs.k8s.io/controller-runtime/tools/setup-envtest@latest
+	$(call go-install-tool,$(ENVTEST),sigs.k8s.io/controller-runtime/tools/setup-envtest,$(ENVTEST_VERSION))
